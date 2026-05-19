@@ -1,0 +1,1471 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Starry Engineering Calculator</title>
+    <meta name="theme-color" content="#020617" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="星空計算機" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="app-icon.svg" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --panel: rgba(255, 255, 255, 0.07);
+        --panel-strong: rgba(255, 255, 255, 0.12);
+        --key: rgba(0, 0, 0, 0.36);
+        --utility: rgba(255, 255, 255, 0.13);
+        --accent: rgba(124, 58, 237, 0.82);
+        --accent-2: #22d3ee;
+        --text-soft: rgba(221, 214, 254, 0.72);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", "Microsoft JhengHei", sans-serif;
+        background: #020107;
+        color: white;
+      }
+
+      .app {
+        position: relative;
+        display: grid;
+        min-height: 100vh;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(ellipse at 18% 16%, rgba(147, 197, 253, 0.2), transparent 28%),
+          radial-gradient(ellipse at 78% 12%, rgba(196, 181, 253, 0.22), transparent 34%),
+          radial-gradient(ellipse at 50% 88%, rgba(34, 211, 238, 0.12), transparent 38%),
+          linear-gradient(135deg, #020617 0%, #05010f 44%, #000 100%);
+      }
+
+      .stars {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .stars::before {
+        content: "";
+        position: absolute;
+        inset: -20%;
+        background:
+          radial-gradient(ellipse at 36% 44%, rgba(255, 255, 255, 0.18), transparent 8%),
+          radial-gradient(ellipse at 48% 48%, rgba(125, 211, 252, 0.12), transparent 14%),
+          radial-gradient(ellipse at 58% 54%, rgba(216, 180, 254, 0.1), transparent 18%);
+        filter: blur(18px);
+        opacity: 0.85;
+        transform: rotate(-18deg);
+      }
+
+      .stars::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(circle, rgba(255, 255, 255, 0.55) 0 1px, transparent 1.5px),
+          radial-gradient(circle, rgba(125, 211, 252, 0.38) 0 1px, transparent 1.5px);
+        background-position:
+          0 0,
+          34px 46px;
+        background-size:
+          86px 86px,
+          132px 132px;
+        opacity: 0.5;
+      }
+
+      .star {
+        position: absolute;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.42);
+        opacity: 0.82;
+        animation: pulse var(--duration) ease-in-out infinite;
+      }
+
+      .shooting-star {
+        position: absolute;
+        width: 120px;
+        height: 1px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+        opacity: 0;
+        transform: rotate(-24deg);
+        animation: shoot 9s linear infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(0.72);
+          opacity: 0.35;
+        }
+
+        50% {
+          transform: scale(1.16);
+          opacity: 0.95;
+        }
+      }
+
+      @keyframes shoot {
+        0% {
+          transform: translate3d(-18vw, -8vh, 0) rotate(-24deg);
+          opacity: 0;
+        }
+
+        8% {
+          opacity: 0.85;
+        }
+
+        18% {
+          transform: translate3d(118vw, 54vh, 0) rotate(-24deg);
+          opacity: 0;
+        }
+
+        100% {
+          transform: translate3d(118vw, 54vh, 0) rotate(-24deg);
+          opacity: 0;
+        }
+      }
+
+      .shell {
+        position: relative;
+        z-index: 1;
+        width: min(760px, calc(100vw - 28px));
+        padding: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 32px;
+        background: var(--panel);
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.52);
+        backdrop-filter: blur(30px);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .title {
+        min-width: 0;
+      }
+
+      .title h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 500;
+      }
+
+      .title p {
+        margin: 4px 0 0;
+        color: var(--text-soft);
+        font-size: 13px;
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        width: 220px;
+        padding: 5px;
+        border-radius: 16px;
+        background: rgba(0, 0, 0, 0.26);
+      }
+
+      .tab {
+        height: 38px;
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.72);
+        font: inherit;
+        font-size: 14px;
+        cursor: pointer;
+      }
+
+      .tab.active {
+        background: var(--panel-strong);
+        color: #fff;
+      }
+
+      .panel {
+        display: none;
+      }
+
+      .panel.active {
+        display: block;
+      }
+
+      .calculator-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 232px;
+        gap: 16px;
+      }
+
+      .display {
+        min-height: 126px;
+        margin-bottom: 14px;
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(0, 0, 0, 0.22);
+        text-align: right;
+        overflow: hidden;
+      }
+
+      .expression {
+        min-height: 24px;
+        margin: 0;
+        color: var(--text-soft);
+        font-size: 16px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .result {
+        margin: 8px 0 0;
+        color: #fff;
+        font-size: clamp(38px, 8vw, 58px);
+        font-weight: 200;
+        line-height: 1.08;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .memory-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 9px;
+        margin-bottom: 10px;
+      }
+
+      .keys {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+      }
+
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+
+      .key,
+      .memory-key {
+        min-width: 0;
+        height: 58px;
+        border: 0;
+        border-radius: 18px;
+        color: white;
+        cursor: pointer;
+        transition:
+          transform 140ms ease,
+          filter 140ms ease,
+          background 140ms ease;
+        user-select: none;
+      }
+
+      .key {
+        background: var(--key);
+        font-size: 22px;
+        font-weight: 300;
+      }
+
+      .memory-key {
+        height: 38px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-soft);
+        font-size: 13px;
+      }
+
+      .key:active,
+      .memory-key:active,
+      .tab:active {
+        transform: scale(0.96);
+      }
+
+      .key:focus-visible,
+      .memory-key:focus-visible,
+      .tab:focus-visible,
+      select:focus-visible,
+      input:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.86);
+        outline-offset: 3px;
+      }
+
+      .utility {
+        background: var(--utility);
+        color: rgb(221, 214, 254);
+      }
+
+      .function {
+        background: rgba(20, 184, 166, 0.24);
+        color: #d9fffb;
+        font-size: 18px;
+      }
+
+      .operator {
+        background: var(--accent);
+        box-shadow: 0 10px 28px rgba(124, 58, 237, 0.28);
+      }
+
+      .equals {
+        background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+        box-shadow: 0 14px 34px rgba(34, 211, 238, 0.24);
+      }
+
+      .zero {
+        grid-column: span 2;
+      }
+
+      .side-card {
+        padding: 16px;
+        border-radius: 24px;
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .side-card h2 {
+        margin: 0 0 12px;
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      .side-list {
+        display: grid;
+        gap: 10px;
+        color: rgba(255, 255, 255, 0.74);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .memory-value {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .converter {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .converter-card {
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(0, 0, 0, 0.22);
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      label {
+        color: var(--text-soft);
+        font-size: 13px;
+      }
+
+      select,
+      input {
+        width: 100%;
+        min-width: 0;
+        height: 48px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 16px;
+        background: rgba(0, 0, 0, 0.34);
+        color: white;
+        padding: 0 14px;
+        font-size: 16px;
+      }
+
+      input[type="number"] {
+        appearance: textfield;
+      }
+
+      .converter-result {
+        min-height: 92px;
+        padding: 18px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(139, 92, 246, 0.18));
+      }
+
+      .converter-result p {
+        margin: 0 0 8px;
+        color: var(--text-soft);
+        font-size: 13px;
+      }
+
+      .converter-result strong {
+        display: block;
+        font-size: clamp(30px, 7vw, 44px);
+        font-weight: 250;
+        line-height: 1.12;
+        overflow-wrap: anywhere;
+      }
+
+      .result-detail {
+        margin-top: 14px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .brand {
+        margin-top: 18px;
+        color: rgba(221, 214, 254, 0.6);
+        font-size: 12px;
+        letter-spacing: 0.28em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .chrome-button {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(3, 7, 18, 0.34);
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 24px;
+        cursor: pointer;
+        backdrop-filter: blur(18px);
+      }
+
+      .shell {
+        width: min(390px, calc(100vw - 18px));
+        min-height: min(780px, calc(100vh - 18px));
+        padding: 14px 14px 18px;
+        border-radius: 34px;
+        border-color: rgba(125, 211, 252, 0.22);
+        background:
+          linear-gradient(180deg, rgba(5, 10, 26, 0.28), rgba(0, 0, 0, 0.2)),
+          rgba(2, 6, 23, 0.16);
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+          0 34px 100px rgba(0, 0, 0, 0.66);
+      }
+
+      .topbar {
+        margin-bottom: 18px;
+      }
+
+      .tabs {
+        position: static;
+        z-index: 3;
+        width: 210px;
+        height: 42px;
+        border: 1px solid rgba(125, 211, 252, 0.13);
+        border-radius: 22px;
+        background: rgba(3, 7, 18, 0.72);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(20px);
+      }
+
+      .tab {
+        height: 30px;
+        border-radius: 18px;
+        font-size: 13px;
+      }
+
+      .tab.active {
+        background:
+          radial-gradient(circle at 70% 10%, rgba(96, 165, 250, 0.62), transparent 42%),
+          rgba(30, 64, 175, 0.76);
+        box-shadow: 0 0 24px rgba(59, 130, 246, 0.38);
+      }
+
+      .calculator-layout {
+        display: block;
+      }
+
+      .display {
+        display: grid;
+        min-height: 136px;
+        align-content: end;
+        margin: 18px 0 10px;
+        padding: 18px 18px;
+        border: 1px solid rgba(147, 197, 253, 0.18);
+        border-radius: 12px;
+        background:
+          radial-gradient(circle at 74% 18%, rgba(255, 255, 255, 0.16), transparent 10%),
+          radial-gradient(circle at 18% 85%, rgba(96, 165, 250, 0.22), transparent 24%),
+          rgba(15, 23, 42, 0.46);
+        box-shadow:
+          inset 0 0 42px rgba(30, 64, 175, 0.2),
+          0 18px 48px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(16px);
+      }
+
+      .expression {
+        font-size: 17px;
+        color: rgba(226, 232, 240, 0.52);
+      }
+
+      .result {
+        font-size: clamp(48px, 15vw, 62px);
+        color: rgba(255, 255, 255, 0.92);
+        text-shadow: 0 0 22px rgba(255, 255, 255, 0.2);
+      }
+
+      .memory-row {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        width: min(270px, 86%);
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        margin: 0 auto 12px;
+        overflow: hidden;
+        border: 1px solid rgba(125, 211, 252, 0.13);
+        border-radius: 22px;
+        background: rgba(3, 7, 18, 0.72);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(20px);
+        pointer-events: none;
+      }
+
+      .memory-key {
+        height: 34px;
+        border-radius: 0;
+        background: transparent;
+        color: rgba(226, 232, 240, 0.62);
+        font-size: 12px;
+        pointer-events: auto;
+      }
+
+      .memory-key:first-child {
+        border-radius: 20px 0 0 20px;
+      }
+
+      .memory-key:last-child {
+        border-radius: 0 20px 20px 0;
+      }
+
+      .keys {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      .key {
+        height: 48px;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.08), transparent 38%),
+          rgba(8, 16, 40, 0.82);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.08),
+          inset 0 -16px 28px rgba(0, 0, 0, 0.16),
+          0 10px 24px rgba(0, 0, 0, 0.26);
+        font-size: 18px;
+      }
+
+      .function {
+        background:
+          radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.09), transparent 38%),
+          rgba(9, 21, 48, 0.86);
+        color: rgba(191, 219, 254, 0.88);
+        font-size: 12px;
+      }
+
+      .utility {
+        background:
+          radial-gradient(circle at 35% 20%, rgba(255, 255, 255, 0.12), transparent 38%),
+          rgba(16, 24, 50, 0.88);
+        color: #c4b5fd;
+      }
+
+      .operator {
+        background:
+          radial-gradient(circle at 72% 22%, rgba(255, 255, 255, 0.22), transparent 32%),
+          linear-gradient(145deg, rgba(124, 58, 237, 0.95), rgba(49, 30, 120, 0.9));
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.14),
+          0 12px 26px rgba(91, 33, 182, 0.38);
+      }
+
+      .equals {
+        background:
+          radial-gradient(circle at 20% 12%, rgba(125, 211, 252, 0.9), transparent 35%),
+          linear-gradient(145deg, rgba(59, 130, 246, 0.95), rgba(124, 58, 237, 0.98));
+        box-shadow: 0 14px 34px rgba(96, 165, 250, 0.42);
+      }
+
+      .zero {
+        border-radius: 34px;
+      }
+
+      .side-card,
+      .brand {
+        display: none;
+      }
+
+      .converter {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 34px;
+      }
+
+      .converter-card {
+        border: 1px solid rgba(147, 197, 253, 0.14);
+        border-radius: 20px;
+        background: rgba(8, 16, 40, 0.68);
+        backdrop-filter: blur(18px);
+      }
+
+      select,
+      input {
+        border-radius: 15px;
+        background: rgba(3, 7, 18, 0.64);
+      }
+
+      .converter-result {
+        background:
+          radial-gradient(circle at 80% 0%, rgba(96, 165, 250, 0.2), transparent 35%),
+          rgba(15, 23, 42, 0.56);
+      }
+
+      @media (max-width: 760px) {
+        body {
+          overflow-y: auto;
+        }
+
+        .app {
+          align-items: start;
+          padding: 14px;
+        }
+
+        .shell {
+          padding: 16px;
+          border-radius: 26px;
+        }
+
+        .topbar,
+        .calculator-layout,
+        .converter {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar {
+          display: grid;
+        }
+
+        .tabs {
+          width: 100%;
+        }
+
+        .side-card {
+          display: none;
+        }
+
+        .keys {
+          gap: 8px;
+        }
+
+        .key {
+          height: 52px;
+          border-radius: 16px;
+          font-size: 19px;
+        }
+
+        .function {
+          font-size: 15px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .app {
+          display: grid;
+          place-items: center;
+          padding: 8px;
+        }
+
+        .shell {
+          width: min(390px, calc(100vw - 12px));
+          min-height: calc(100vh - 12px);
+          padding: 12px 12px 16px;
+          border-radius: 30px;
+        }
+
+        .topbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
+        .tabs {
+          width: min(210px, calc(100vw - 116px));
+        }
+
+        .display {
+          min-height: 132px;
+          margin: 16px 0 10px;
+        }
+
+        .keys {
+          gap: 7px;
+        }
+
+        .key {
+          height: 48px;
+          border-radius: 50%;
+          font-size: 18px;
+        }
+
+        .function {
+          font-size: 12px;
+        }
+
+        .zero {
+          border-radius: 34px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <div class="stars" aria-hidden="true" id="stars"></div>
+
+      <section class="shell" aria-label="工程計算機與單位換算">
+        <div class="topbar">
+          <button class="chrome-button" type="button" aria-label="選單">☰</button>
+          <div class="tabs" role="tablist" aria-label="功能切換">
+            <button class="tab active" type="button" data-tab="calculator">工程計算</button>
+            <button class="tab" type="button" data-tab="converter">單位換算</button>
+          </div>
+          <button class="chrome-button" type="button" aria-label="歷史">↺</button>
+        </div>
+
+        <div class="panel active" id="calculator-panel">
+          <div class="calculator-layout">
+            <div>
+              <div class="display" aria-live="polite">
+                <p class="expression" id="expression">0</p>
+                <h2 class="result" id="result">0</h2>
+              </div>
+
+              <div class="memory-row">
+                <button class="memory-key" type="button" data-memory="clear">MC</button>
+                <button class="memory-key" type="button" data-memory="recall">MR</button>
+                <button class="memory-key" type="button" data-memory="add">M+</button>
+                <button class="memory-key" type="button" data-memory="subtract">M-</button>
+              </div>
+
+              <div class="keys">
+                <button class="key utility" type="button" data-action="clear">AC</button>
+                <button class="key utility" type="button" data-action="backspace">⌫</button>
+                <button class="key utility" type="button" data-token="(">(</button>
+                <button class="key utility" type="button" data-token=")">)</button>
+                <button class="key operator" type="button" data-token="/">÷</button>
+
+                <button class="key function" type="button" data-function="sin">sin</button>
+                <button class="key function" type="button" data-function="cos">cos</button>
+                <button class="key function" type="button" data-function="tan">tan</button>
+                <button class="key function" type="button" data-action="constant" data-value="pi">π</button>
+                <button class="key operator" type="button" data-token="*">×</button>
+
+                <button class="key function" type="button" data-function="asin">sin⁻¹</button>
+                <button class="key function" type="button" data-function="acos">cos⁻¹</button>
+                <button class="key function" type="button" data-function="atan">tan⁻¹</button>
+                <button class="key function" type="button" data-action="constant" data-value="e">e</button>
+                <button class="key operator" type="button" data-token="-">−</button>
+
+                <button class="key function" type="button" data-function="sqrt">√</button>
+                <button class="key function" type="button" data-function="log">log</button>
+                <button class="key function" type="button" data-function="ln">ln</button>
+                <button class="key function" type="button" data-action="power">xʸ</button>
+                <button class="key operator" type="button" data-token="+">+</button>
+
+                <button class="key function" type="button" data-action="square">x²</button>
+                <button class="key number" type="button" data-token="7">7</button>
+                <button class="key number" type="button" data-token="8">8</button>
+                <button class="key number" type="button" data-token="9">9</button>
+                <button class="key utility" type="button" data-action="percent">%</button>
+
+                <button class="key function" type="button" data-action="inverse">1/x</button>
+                <button class="key number" type="button" data-token="4">4</button>
+                <button class="key number" type="button" data-token="5">5</button>
+                <button class="key number" type="button" data-token="6">6</button>
+                <button class="key function" type="button" data-action="factorial">n!</button>
+
+                <button class="key function" type="button" data-action="sign">+/-</button>
+                <button class="key number" type="button" data-token="1">1</button>
+                <button class="key number" type="button" data-token="2">2</button>
+                <button class="key number" type="button" data-token="3">3</button>
+                <button class="key equals" type="button" data-action="equals">=</button>
+
+                <button class="key utility" type="button" data-action="degrees" id="angleMode">DEG</button>
+                <button class="key number zero" type="button" data-token="0">0</button>
+                <button class="key number" type="button" data-token=".">.</button>
+                <button class="key equals" type="button" data-action="equals">=</button>
+              </div>
+            </div>
+
+            <aside class="side-card">
+              <h2>快速提示</h2>
+              <div class="side-list">
+                <span>三角函數會依 DEG/RAD 模式計算。</span>
+                <span>可用鍵盤輸入數字、+、-、*、/、Enter。</span>
+                <span>支援括號與連續算式，例如 2*(3+4)。</span>
+              </div>
+              <div class="memory-value" id="memoryValue">Memory: 0</div>
+            </aside>
+          </div>
+        </div>
+
+        <div class="panel" id="converter-panel">
+          <div class="converter">
+            <div class="converter-card">
+              <div class="field">
+                <label for="category">換算類型</label>
+                <select id="category">
+                  <option value="length">長度</option>
+                  <option value="area">面積</option>
+                  <option value="mass">重量</option>
+                  <option value="temperature">溫度</option>
+                  <option value="volume">體積</option>
+                  <option value="speed">速度</option>
+                  <option value="pressure">壓力</option>
+                  <option value="power">功率</option>
+                  <option value="metricThread">公制螺紋</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="convertValue" id="convertValueLabel">輸入數值</label>
+                <input id="convertValue" type="number" inputmode="decimal" value="1" min="0" step="0.1" />
+                <select id="threadLength" hidden></select>
+              </div>
+
+              <div class="field">
+                <label for="fromUnit" id="fromUnitLabel">從</label>
+                <select id="fromUnit"></select>
+              </div>
+
+              <div class="field">
+                <label for="toUnit" id="toUnitLabel">到</label>
+                <select id="toUnit"></select>
+              </div>
+            </div>
+
+            <div class="converter-card">
+              <div class="converter-result">
+                <p id="conversionFormula">1 meter = 100 centimeter</p>
+                <strong id="conversionResult">100</strong>
+                <div class="result-detail" id="conversionDetail"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="brand">Cosmic Engineering Calculator</div>
+      </section>
+    </main>
+
+    <script>
+      const stars = document.querySelector("#stars");
+      const tabs = document.querySelectorAll(".tab");
+      const panels = {
+        calculator: document.querySelector("#calculator-panel"),
+        converter: document.querySelector("#converter-panel"),
+      };
+      const expressionEl = document.querySelector("#expression");
+      const resultEl = document.querySelector("#result");
+      const keys = document.querySelector(".keys");
+      const memoryButtons = document.querySelector(".memory-row");
+      const angleModeEl = document.querySelector("#angleMode");
+      const memoryValueEl = document.querySelector("#memoryValue");
+      const categoryEl = document.querySelector("#category");
+      const convertValueEl = document.querySelector("#convertValue");
+      const convertValueLabelEl = document.querySelector("#convertValueLabel");
+      const threadLengthEl = document.querySelector("#threadLength");
+      const fromUnitEl = document.querySelector("#fromUnit");
+      const fromUnitLabelEl = document.querySelector("#fromUnitLabel");
+      const toUnitEl = document.querySelector("#toUnit");
+      const toUnitLabelEl = document.querySelector("#toUnitLabel");
+      const conversionFormulaEl = document.querySelector("#conversionFormula");
+      const conversionResultEl = document.querySelector("#conversionResult");
+      const conversionDetailEl = document.querySelector("#conversionDetail");
+
+      const formatter = new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 10,
+      });
+
+      let expression = "";
+      let result = "0";
+      let justEvaluated = false;
+      let angleMode = "DEG";
+      let memory = 0;
+
+      const standardThreadLengths = {
+        small: [3, 4, 5, 6, 8, 10, 12, 16],
+        compact: [4, 5, 6, 8, 10, 12, 16, 20],
+        medium: [6, 8, 10, 12, 16, 20, 25, 30, 35, 40],
+        large: [12, 16, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80],
+        heavy: [25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 120, 140, 160],
+      };
+
+      const units = {
+        length: {
+          base: "m",
+          items: {
+            mm: { label: "毫米 mm", factor: 0.001 },
+            cm: { label: "公分 cm", factor: 0.01 },
+            m: { label: "公尺 m", factor: 1 },
+            km: { label: "公里 km", factor: 1000 },
+            fen: { label: "分 1/8 in", factor: 0.003175 },
+            inch: { label: "英吋 in", factor: 0.0254 },
+            ft: { label: "英尺 ft", factor: 0.3048 },
+            yd: { label: "碼 yd", factor: 0.9144 },
+            mile: { label: "英里 mi", factor: 1609.344 },
+          },
+        },
+        area: {
+          base: "m2",
+          items: {
+            cm2: { label: "平方公分 cm²", factor: 0.0001 },
+            m2: { label: "平方公尺 m²", factor: 1 },
+            km2: { label: "平方公里 km²", factor: 1000000 },
+            ha: { label: "公頃 ha", factor: 10000 },
+            acre: { label: "英畝 acre", factor: 4046.8564224 },
+          },
+        },
+        mass: {
+          base: "kg",
+          items: {
+            mg: { label: "毫克 mg", factor: 0.000001 },
+            g: { label: "公克 g", factor: 0.001 },
+            kg: { label: "公斤 kg", factor: 1 },
+            tonne: { label: "公噸 t", factor: 1000 },
+            oz: { label: "盎司 oz", factor: 0.028349523125 },
+            lb: { label: "磅 lb", factor: 0.45359237 },
+          },
+        },
+        volume: {
+          base: "l",
+          items: {
+            ml: { label: "毫升 ml", factor: 0.001 },
+            l: { label: "公升 L", factor: 1 },
+            m3: { label: "立方公尺 m³", factor: 1000 },
+            tsp: { label: "茶匙 tsp", factor: 0.00492892159375 },
+            tbsp: { label: "湯匙 tbsp", factor: 0.01478676478125 },
+            cup: { label: "杯 cup", factor: 0.24 },
+            gal: { label: "加侖 gal", factor: 3.785411784 },
+          },
+        },
+        speed: {
+          base: "mps",
+          items: {
+            mps: { label: "公尺/秒 m/s", factor: 1 },
+            kph: { label: "公里/小時 km/h", factor: 0.2777777777777778 },
+            mph: { label: "英里/小時 mph", factor: 0.44704 },
+            knot: { label: "節 knot", factor: 0.5144444444444445 },
+          },
+        },
+        pressure: {
+          base: "pa",
+          items: {
+            pa: { label: "帕斯卡 Pa", factor: 1 },
+            kpa: { label: "千帕 kPa", factor: 1000 },
+            mpa: { label: "百萬帕 MPa", factor: 1000000 },
+            bar: { label: "巴 bar", factor: 100000 },
+            atm: { label: "標準大氣壓 atm", factor: 101325 },
+            psi: { label: "磅/平方英吋 psi", factor: 6894.757293168 },
+            mmhg: { label: "毫米汞柱 mmHg", factor: 133.322387415 },
+            torr: { label: "托 torr", factor: 133.32236842105263 },
+          },
+        },
+        power: {
+          base: "w",
+          items: {
+            w: { label: "瓦 W", factor: 1 },
+            kw: { label: "千瓦 kW", factor: 1000 },
+            mw: { label: "百萬瓦 MW", factor: 1000000 },
+            hpMetric: { label: "公制馬力 PS / hp(M)", factor: 735.49875 },
+            hpMechanical: { label: "英制馬力 hp(I)", factor: 745.6998715822702 },
+            btuPerHour: { label: "BTU/小時", factor: 0.2930710701722222 },
+            kcalPerHour: { label: "千卡/小時 kcal/h", factor: 1.1622222222222223 },
+          },
+        },
+        temperature: {
+          temperature: true,
+          items: {
+            c: { label: "攝氏 °C" },
+            f: { label: "華氏 °F" },
+            k: { label: "克氏 K" },
+          },
+        },
+        metricThread: {
+          thread: true,
+          items: {
+            m1: { label: "M1", pitch: 0.25, torque: null, lengths: "small" },
+            m1_2: { label: "M1.2", pitch: 0.25, torque: null, lengths: "small" },
+            m1_4: { label: "M1.4", pitch: 0.3, torque: null, lengths: "small" },
+            m1_6: { label: "M1.6", pitch: 0.35, torque: 0.16, lengths: "small" },
+            m2: { label: "M2", pitch: 0.4, torque: 0.35, lengths: "compact" },
+            m2_5: { label: "M2.5", pitch: 0.45, torque: 0.7, lengths: "compact" },
+            m3: { label: "M3", pitch: 0.5, torque: 1.3, lengths: "compact" },
+            m4: { label: "M4", pitch: 0.7, torque: 3, lengths: "medium" },
+            m5: { label: "M5", pitch: 0.8, torque: 6, lengths: "medium" },
+            m6: { label: "M6", pitch: 1, torque: 10, lengths: "medium" },
+            m8: { label: "M8", pitch: 1.25, torque: 25, lengths: "large" },
+            m10: { label: "M10", pitch: 1.5, torque: 49, lengths: "large" },
+            m12: { label: "M12", pitch: 1.75, torque: 85, lengths: "large" },
+            m14: { label: "M14", pitch: 2, torque: 135, lengths: "large" },
+            m16: { label: "M16", pitch: 2, torque: 210, lengths: "heavy" },
+            m18: { label: "M18", pitch: 2.5, torque: 290, lengths: "heavy" },
+            m20: { label: "M20", pitch: 2.5, torque: 410, lengths: "heavy" },
+            m22: { label: "M22", pitch: 2.5, torque: 550, lengths: "heavy" },
+            m24: { label: "M24", pitch: 3, torque: 710, lengths: "heavy" },
+            m27: { label: "M27", pitch: 3, torque: 1050, lengths: "heavy" },
+            m30: { label: "M30", pitch: 3.5, torque: 1450, lengths: "heavy" },
+            m33: { label: "M33", pitch: 3.5, torque: 1950, lengths: "heavy" },
+            m36: { label: "M36", pitch: 4, torque: 2500, lengths: "heavy" },
+            m39: { label: "M39", pitch: 4, torque: 3200, lengths: "heavy" },
+            m42: { label: "M42", pitch: 4.5, torque: 4100, lengths: "heavy" },
+            m45: { label: "M45", pitch: 4.5, torque: 5000, lengths: "heavy" },
+            m48: { label: "M48", pitch: 5, torque: 6100, lengths: "heavy" },
+            m52: { label: "M52", pitch: 5, torque: 7900, lengths: "heavy" },
+            m56: { label: "M56", pitch: 5.5, torque: 9800, lengths: "heavy" },
+            m60: { label: "M60", pitch: 5.5, torque: 12000, lengths: "heavy" },
+            m64: { label: "M64", pitch: 6, torque: 14500, lengths: "heavy" },
+          },
+        },
+      };
+
+      function createStars() {
+        const fragment = document.createDocumentFragment();
+
+        for (let i = 0; i < 220; i += 1) {
+          const star = document.createElement("span");
+          const size = Math.random() * 2.8 + 0.7;
+          star.className = "star";
+          star.style.width = `${size}px`;
+          star.style.height = `${size}px`;
+          star.style.top = `${Math.random() * 100}%`;
+          star.style.left = `${Math.random() * 100}%`;
+          star.style.setProperty("--duration", `${Math.random() * 3 + 2}s`);
+          star.style.animationDelay = `${Math.random() * 4}s`;
+          fragment.appendChild(star);
+        }
+
+        for (let i = 0; i < 3; i += 1) {
+          const shootingStar = document.createElement("span");
+          shootingStar.className = "shooting-star";
+          shootingStar.style.top = `${8 + i * 18}%`;
+          shootingStar.style.left = `${-20 - i * 24}%`;
+          shootingStar.style.animationDelay = `${i * 3.2}s`;
+          fragment.appendChild(shootingStar);
+        }
+
+        stars.appendChild(fragment);
+      }
+
+      function formatValue(value) {
+        if (!Number.isFinite(value)) {
+          return "Error";
+        }
+
+        if (Math.abs(value) >= 1e12 || (Math.abs(value) > 0 && Math.abs(value) < 1e-9)) {
+          return value.toExponential(8).replace(/\.?0+e/, "e");
+        }
+
+        return formatter.format(Number(value.toPrecision(12)));
+      }
+
+      function displayExpression(value) {
+        if (!value) {
+          return "0";
+        }
+
+        return value
+          .replaceAll("Math.PI", "π")
+          .replaceAll("Math.E", "e")
+          .replaceAll("Math.sqrt", "√")
+          .replaceAll("Math.log10", "log")
+          .replaceAll("Math.log", "ln")
+          .replaceAll("asind", "sin⁻¹")
+          .replaceAll("acosd", "cos⁻¹")
+          .replaceAll("atand", "tan⁻¹")
+          .replaceAll("sind", "sin")
+          .replaceAll("cosd", "cos")
+          .replaceAll("tand", "tan")
+          .replaceAll("**", "^")
+          .replaceAll("*", "×")
+          .replaceAll("/", "÷")
+          .replaceAll("-", "−");
+      }
+
+      function updateDisplay() {
+        expressionEl.textContent = displayExpression(expression);
+        resultEl.textContent = result;
+        angleModeEl.textContent = angleMode;
+        memoryValueEl.textContent = `Memory: ${formatValue(memory)}`;
+      }
+
+      function appendToken(token) {
+        if (result === "Error") {
+          expression = "";
+          result = "0";
+        }
+
+        if (justEvaluated && /[0-9.(]/.test(token)) {
+          expression = "";
+        }
+
+        justEvaluated = false;
+        expression += token;
+        result = displayExpression(expression);
+        updateDisplay();
+      }
+
+      function appendFunction(name) {
+        const trigMap = {
+          sin: "sind(",
+          cos: "cosd(",
+          tan: "tand(",
+          asin: "asind(",
+          acos: "acosd(",
+          atan: "atand(",
+        };
+        const functionMap = {
+          sqrt: "Math.sqrt(",
+          log: "Math.log10(",
+          ln: "Math.log(",
+          ...trigMap,
+        };
+
+        appendToken(functionMap[name]);
+      }
+
+      function clearCalculator() {
+        expression = "";
+        result = "0";
+        justEvaluated = false;
+        updateDisplay();
+      }
+
+      function backspace() {
+        expression = expression.slice(0, -1);
+        result = expression ? displayExpression(expression) : "0";
+        updateDisplay();
+      }
+
+      function getCurrentValue() {
+        if (result !== "Error" && result !== displayExpression(expression)) {
+          return Number(String(result).replaceAll(",", ""));
+        }
+
+        return evaluateExpression(false);
+      }
+
+      function wrapExpression(prefix, suffix = ")") {
+        if (!expression) {
+          expression = "0";
+        }
+
+        expression = `${prefix}(${expression})${suffix}`;
+        evaluateExpression(true);
+      }
+
+      function factorial(value) {
+        if (value < 0 || !Number.isInteger(value) || value > 170) {
+          return NaN;
+        }
+
+        let total = 1;
+        for (let i = 2; i <= value; i += 1) {
+          total *= i;
+        }
+        return total;
+      }
+
+      function toRad(value) {
+        return angleMode === "DEG" ? (value * Math.PI) / 180 : value;
+      }
+
+      function fromRad(value) {
+        return angleMode === "DEG" ? (value * 180) / Math.PI : value;
+      }
+
+      function sind(value) {
+        return Math.sin(toRad(value));
+      }
+
+      function cosd(value) {
+        return Math.cos(toRad(value));
+      }
+
+      function tand(value) {
+        return Math.tan(toRad(value));
+      }
+
+      function asind(value) {
+        return fromRad(Math.asin(value));
+      }
+
+      function acosd(value) {
+        return fromRad(Math.acos(value));
+      }
+
+      function atand(value) {
+        return fromRad(Math.atan(value));
+      }
+
+      function evaluateExpression(showResult) {
+        try {
+          if (!expression) {
+            return 0;
+          }
+
+          const value = Function(
+            "factorial",
+            "sind",
+            "cosd",
+            "tand",
+            "asind",
+            "acosd",
+            "atand",
+            `"use strict"; return (${expression});`,
+          )(factorial, sind, cosd, tand, asind, acosd, atand);
+
+          if (showResult) {
+            result = formatValue(value);
+            justEvaluated = true;
+            updateDisplay();
+          }
+
+          return value;
+        } catch (error) {
+          if (showResult) {
+            result = "Error";
+            justEvaluated = true;
+            updateDisplay();
+          }
+          return NaN;
+        }
+      }
+
+      function applyAction(action, value) {
+        if (action === "clear") clearCalculator();
+        if (action === "backspace") backspace();
+        if (action === "equals") evaluateExpression(true);
+        if (action === "degrees") {
+          angleMode = angleMode === "DEG" ? "RAD" : "DEG";
+          updateDisplay();
+        }
+        if (action === "constant") appendToken(value === "pi" ? "Math.PI" : "Math.E");
+        if (action === "power") appendToken("**");
+        if (action === "square") wrapExpression("", "**2");
+        if (action === "inverse") wrapExpression("1/");
+        if (action === "percent") wrapExpression("", "/100");
+        if (action === "factorial") wrapExpression("factorial");
+        if (action === "sign") {
+          if (expression.startsWith("-(") && expression.endsWith(")")) {
+            expression = expression.slice(2, -1);
+          } else {
+            expression = `-(${expression || "0"})`;
+          }
+          result = displayExpression(expression);
+          updateDisplay();
+        }
+      }
+
+      function handleKeys(event) {
+        const target = event.target;
+        const token = target.dataset.token;
+        const functionName = target.dataset.function;
+        const action = target.dataset.action;
+
+        if (token) appendToken(token);
+        if (functionName) appendFunction(functionName);
+        if (action) applyAction(action, target.dataset.value);
+      }
+
+      function handleMemory(event) {
+        const action = event.target.dataset.memory;
+        const value = getCurrentValue();
+
+        if (action === "clear") memory = 0;
+        if (action === "recall") {
+          expression += String(memory);
+          result = displayExpression(expression);
+        }
+        if (action === "add" && Number.isFinite(value)) memory += value;
+        if (action === "subtract" && Number.isFinite(value)) memory -= value;
+        updateDisplay();
+      }
+
+      function handleKeyboard(event) {
+        const key = event.key;
+
+        if (/^\d$/.test(key) || key === "." || ["+", "-", "*", "/", "(", ")"].includes(key)) {
+          appendToken(key);
+        }
+        if (key === "Enter" || key === "=") evaluateExpression(true);
+        if (key === "Escape") clearCalculator();
+        if (key === "Backspace") backspace();
+        if (key === "%") applyAction("percent");
+      }
+
+      function switchTab(tabName) {
+        tabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === tabName));
+        Object.entries(panels).forEach(([name, panel]) => {
+          panel.classList.toggle("active", name === tabName);
+        });
+      }
+
+      function temperatureToCelsius(value, unit) {
+        if (unit === "c") return value;
+        if (unit === "f") return (value - 32) * (5 / 9);
+        return value - 273.15;
+      }
+
+      function celsiusToTemperature(value, unit) {
+        if (unit === "c") return value;
+        if (unit === "f") return value * (9 / 5) + 32;
+        return value + 273.15;
+      }
+
+      function populateUnits() {
+        const category = units[categoryEl.value];
+        const entries = Object.entries(category.items);
+        const previousFrom = fromUnitEl.value;
+        const previousTo = toUnitEl.value;
+
+        fromUnitEl.innerHTML = "";
+        toUnitEl.innerHTML = "";
+        convertValueEl.disabled = false;
+        toUnitEl.disabled = Boolean(category.thread);
+        conversionDetailEl.textContent = "";
+
+        if (category.thread) {
+          convertValueLabelEl.textContent = "螺絲公定長度";
+          convertValueEl.hidden = true;
+          threadLengthEl.hidden = true;
+          fromUnitLabelEl.textContent = "螺紋規格";
+          toUnitLabelEl.textContent = "輸出";
+        } else {
+          convertValueLabelEl.textContent = "輸入數值";
+          convertValueEl.hidden = false;
+          threadLengthEl.hidden = true;
+          fromUnitLabelEl.textContent = "從";
+          toUnitLabelEl.textContent = "到";
+        }
+
+        entries.forEach(([key, unit], index) => {
+          const fromOption = new Option(unit.label, key);
+          fromUnitEl.add(fromOption);
+
+          if (!category.thread) {
+            const toOption = new Option(unit.label, key);
+            toUnitEl.add(toOption);
+
+            if (index === 1 || entries.length === 1) {
+              toOption.selected = true;
+            }
+          }
+        });
+
+        if (category.thread) {
+          toUnitEl.add(new Option("螺距與參考扭矩", "threadInfo"));
+        }
+
+        if (category.items[previousFrom]) fromUnitEl.value = previousFrom;
+        if (!category.thread && category.items[previousTo]) toUnitEl.value = previousTo;
+        if (!category.thread && fromUnitEl.value === toUnitEl.value && entries[1]) toUnitEl.value = entries[1][0];
+        updateConversion();
+      }
+
+      function updateConversion() {
+        const category = units[categoryEl.value];
+        const input = Number(convertValueEl.value);
+        const from = fromUnitEl.value;
+        const to = toUnitEl.value;
+
+        if (!category.thread && !Number.isFinite(input)) {
+          conversionResultEl.textContent = "Error";
+          conversionDetailEl.textContent = "";
+          return;
+        }
+
+        let output;
+        if (category.thread) {
+          const thread = category.items[from];
+          const lengths = standardThreadLengths[thread.lengths] || [];
+          const lengthText = lengths.map((length) => `${length}`).join(", ");
+          const torqueText =
+            thread.torque === null
+              ? "無建議值"
+              : `${formatValue(thread.torque)} N·m`;
+
+          conversionFormulaEl.textContent = `${thread.label} 常用公定長度`;
+          conversionResultEl.textContent = `${thread.label} 粗牙`;
+          conversionDetailEl.innerHTML = [
+            `標準粗牙螺距：${formatValue(thread.pitch)} mm`,
+            `公定長度：${lengthText} mm`,
+            `參考鎖緊扭矩：${torqueText}`,
+            "扭矩以一般 8.8 級粗牙螺栓乾式條件估算，實際請依材料、潤滑與規範調整。",
+          ].join("<br>");
+          return;
+        }
+
+        if (category.temperature) {
+          output = celsiusToTemperature(temperatureToCelsius(input, from), to);
+        } else {
+          output = (input * category.items[from].factor) / category.items[to].factor;
+        }
+
+        conversionFormulaEl.textContent = `${input} ${category.items[from].label} =`;
+        conversionResultEl.textContent = `${formatValue(output)} ${category.items[to].label}`;
+        conversionDetailEl.textContent = "";
+      }
+
+      createStars();
+      updateDisplay();
+      populateUnits();
+
+      keys.addEventListener("click", handleKeys);
+      memoryButtons.addEventListener("click", handleMemory);
+      window.addEventListener("keydown", handleKeyboard);
+      tabs.forEach((tab) => tab.addEventListener("click", () => switchTab(tab.dataset.tab)));
+      categoryEl.addEventListener("change", populateUnits);
+      convertValueEl.addEventListener("input", updateConversion);
+      fromUnitEl.addEventListener("change", updateConversion);
+      toUnitEl.addEventListener("change", updateConversion);
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>
